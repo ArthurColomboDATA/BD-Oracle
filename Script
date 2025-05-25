@@ -1,0 +1,263 @@
+-- Código feito no Oracle versão 23.1.1.345
+
+-- Todos os dados relacionados á identificação utilização o tipo INTEGER
+
+-- A estrutura do código é: criação, logo abaixo da criação o ALTER TABLE relacionado a PK e CK (se necessário), após toda a criação temos a parte de FK, e por fim , os comandos DROP.
+
+
+-- Criação, Pk's e Ck's.
+CREATE TABLE T_SGV_CATEGORIA_PRODUTO (
+    cd_categoria        INTEGER GENERATED ALWAYS AS IDENTITY, 
+    nm_categoria        VARCHAR2(125) NOT NULL,
+    ds_categoria        VARCHAR2(255) UNIQUE NOT NULL,
+    dt_inicio           DATE NOT NULL,
+    dt_final            DATE NULL
+);
+
+ALTER TABLE T_SGV_CATEGORIA_PRODUTO ADD CONSTRAINT PK_SGV_CATEGORIA_PRODUTO PRIMARY KEY ( cd_categoria );
+
+CREATE TABLE T_SGV_CLIENTE (
+    cd_cliente     INTEGER,
+    nm_cliente     VARCHAR2(255) NOT NULL,
+    sta_cliente    CHAR(1) NOT NULL,
+    ds_endereço    VARCHAR2(255) NOT NULL,
+    nr_telefone    NUMBER(9),
+    login          VARCHAR2(255) NOT NULL,
+    senha          INTEGER NOT NULL
+);
+
+ALTER TABLE T_SGV_CLIENTE ADD CONSTRAINT PK_SGV_CLIENTE PRIMARY KEY ( cd_cliente );
+
+CREATE TABLE T_SGV_FUNCIONARIO (
+    cd_funcionario  INTEGER,
+    nm_funcionario  VARCHAR2(255 CHAR) NOT NULL,
+    cpf             CHAR(11) UNIQUE NOT NULL,
+    dt_nascimento   DATE NOT NULL,
+    telefone        CHAR(11) NOT NULL,
+    email           VARCHAR2 (125) NOT NULL,
+    cargo           VARCHAR2(125) NOT NULL,
+    nm_departamento VARCHAR2(125) NOT NULL
+);
+
+ALTER TABLE T_SGV_FUNCIONARIO ADD CONSTRAINT PK_SGV_FUNCIONARIO PRIMARY KEY ( cd_funcionario );
+
+CREATE TABLE T_SGV_PEDIDO (
+    cd_pedido                          INTEGER,
+    cd_cliente                         INTEGER NOT NULL,
+    cd_produto                         INTEGER NOT NULL, 
+    endereco_entrega                   VARCHAR2(255) NOT NULL,
+    empresa_entrega                    VARCHAR2(255) NOT NULL,
+    previsao_em_dias                   INTEGER,
+    sta_pedido                         CHAR(1) NOT NULL
+);
+
+ALTER TABLE T_SGV_PEDIDO
+    ADD CONSTRAINT PK_SGV_PEDIDO PRIMARY KEY ( cd_pedido,
+                                             cd_cliente,
+                                             cd_produto
+                                            );
+                                            
+ALTER TABLE T_SGV_PEDIDO ADD CONSTRAINT CK_STA_PEDIDO CHECK (sta_pedido IN ('A', 'E', 'EA', 'C'))
+
+CREATE TABLE T_SGV_PESSOAFISICA (
+    cd_cliente           INTEGER,
+    rg                   CHAR(8) NOT NULL,
+    cpf                  CHAR(11) NOT NULL,
+    dt_nascimento        DATE NOT NULL,
+    sexo                 CHAR(1) NOT NULL,
+    genero               CHAR(1)
+);
+
+ALTER TABLE T_SGV_PESSOAFISICA ADD CONSTRAINT PK_SGV_PESSOAFISICA PRIMARY KEY (cd_cliente);
+
+CREATE TABLE T_SGV_PESSOAJURIDICA (
+    cd_cliente           INTEGER,
+    ds_razao_social      VARCHAR2(255) NOT NULL,
+    nm_fantasia          VARCHAR2(255),
+    nr_cnpj              CHAR(14) NOT NULL,
+    nr_insc_estadual     CHAR(9) NOT NULL,
+    dt_fundacao          DATE,
+    ramo_empresarial     VARCHAR2(255) NOT NULL
+);
+
+ALTER TABLE T_SGV_PESSOAJURIDICA ADD CONSTRAINT PK_SGV_PESSOAJURIDICA PRIMARY KEY (cd_cliente);
+
+CREATE TABLE T_SGV_PRODUTO (
+    cd_produto               INTEGER GENERATED ALWAYS AS IDENTITY, 
+    cd_categoria             INTEGER NOT NULL,
+    nm_produto               VARCHAR2(125) UNIQUE NOT NULL,
+    ds_produto               VARCHAR2(255) NOT NULL,
+    cd_barras                CHAR(13) NULL,
+    preco_produto            NUMBER(10, 2) NOT NULL,
+    sta_produto              CHAR(1) NOT NULL 
+);
+
+ALTER TABLE T_SGV_PRODUTO ADD CONSTRAINT PK_SGV_PRODUTO PRIMARY KEY ( cd_produto );
+                                                                
+ALTER TABLE T_SGV_PRODUTO ADD CONSTRAINT CK_STA_PRODUTO CHECK (sta_produto IN ('A','I'));
+
+CREATE TABLE T_SGV_SAC (
+    cd_chamado                   INTEGER GENERATED ALWAYS AS IDENTITY,
+    cd_cliente                   INTEGER NOT NULL,
+    cd_funcionario               INTEGER NOT NULL,
+    cd_produto                   INTEGER NOT NULL,
+    ds_chamado                   VARCHAR2(4000) NOT NULL,
+    dthr_abertura                TIMESTAMP NOT NULL,
+    dthr_atendimento             TIMESTAMP NULL,
+    duracao_atendimento          INTEGER, -- PARA SER MOSTRADO A QUANTIDADE DE MINUTOS
+    ds_funcionario               VARCHAR2(255) NOT NULL,
+    tp_chamado                   CHAR(1) NOT NULL -- Tipo 1, incluir apenas o 1, Tipo 2 a mesma coisa.
+    sta_chamado                  VARCHAR2(10) NOT NULL,
+    satisfacao                   INTEGER NULL,
+    qntd_estrelas                INTEGER NOT NULL
+);
+
+ALTER TABLE T_SGV_SAC
+    ADD CONSTRAINT PK_SGV_SAC PRIMARY KEY ( cd_chamado );
+
+ALTER TABLE T_SGV_SAC 
+    ADD CONSTRAINT CK_STA_CHAMADO CHECK (sta_chamado IN ('A','E','C','F','X'));
+
+CREATE TABLE T_SGV_VIDEO_PRODUTO (
+    cd_video                           INTEGER,
+    cd_produto                         INTEGER NOT NULL, 
+    cd_categoria                       INTEGER NOT NULL,
+    visualizacao                       INTEGER NOT NULL,
+    cliente_logado                     CHAR(1) NOT NULL,
+    dthr_visualização                  TIMESTAMP
+    sta_video                          CHAR(1) NOT NULL
+);
+
+ALTER TABLE T_SGV_VIDEO_PRODUTO
+    ADD CONSTRAINT PK_SGV_VIDEO_PRODUTO PRIMARY KEY (cd_video);
+    
+ALTER TABLE T_SGV_VIDEO_PRODUTO
+    ADD CONSTRAINT CK_STA_VIDEO CHECK (sta_video IN ('A', 'I'));
+
+CREATE TABLE T_SGV_CATEGORIA_VIDEO (
+    cd_categoria INTEGER,
+    nm_categoria VARCHAR2(125) NOT NULL,
+    );
+    
+ALTER TABLE T_SGV_CATEGORIA_VIDEO
+    ADD CONSTRAINT PK_SGV_CATEGORIA_VIDEO PRIMARY KEY ( cd_categoria );
+    
+-- Criação Fk's
+    
+ALTER TABLE T_SGV_PEDIDO -- Todo pedido deve ter um cliente, mas, todo cliente pode Não ter feito pedido
+    ADD CONSTRAINT FK_T_SGV_CLIENTE FOREIGN KEY (cd_cliente)
+        REFERENCES T_SGV_CLIENTE ( cd_cliente )
+        ON DELETE CASCADE;
+
+ALTER TABLE T_SGV_PEDIDO -- Todo pedido deve ter um produto, mas, todo produto pode Não ter um pedido
+    ADD CONSTRAINT FK_T_SGV_PRODUTO FOREIGN KEY ( cd_produto )
+        REFERENCES T_SGV_PRODUTO ( cd_produto )
+        ON DELETE CASCADE;
+
+ALTER TABLE T_SGV_PESSOAFISICA -- As tabelas especialistas da tabela T_SGV_CLIENTE
+    ADD CONSTRAINT FK_T_SGV_CLIENTE2 FOREIGN KEY ( cd_cliente )
+        REFERENCES T_SGV_CLIENTE ( cd_cliente )
+        ON DELETE CASCADE;
+
+ALTER TABLE T_SGV_PESSOAJURIDICA
+    ADD CONSTRAINT FK_T_SGV_CLIENTE3 FOREIGN KEY ( cd_cliente )
+        REFERENCES T_SGV_CLIENTE ( cd_cliente )
+        ON DELETE CASCADE;
+
+ALTER TABLE T_SGV_PRODUTO -- Todo produto deve estar em uma categoria
+    ADD CONSTRAINT FK_T_SGV_CATEGORIA FOREIGN KEY (cd_categoria)
+        REFERENCES T_SGV_CATEGORIA_PRODUTO ( cd_categoria )
+        ON DELETE CASCADE;
+        
+ALTER TABLE T_SGV_VIDEO_PRODUTO -- Todo video sobre o produto deve estar cetegorizado
+    ADD CONSTRAINT FK_T_SGV_CTG_VIDEO FOREIGN KEY (cd_categoria)
+        REFERENCES T_SGV_CATEGORIA_VIDEO (cd_categoria)
+        ON DELETE CASCADE;
+
+ALTER TABLE T_SGV_SAC -- O chamado precisa ser de um CLIENTE
+    ADD CONSTRAINT FK_T_SGV_CLIENTE4 FOREIGN KEY ( cd_cliente )
+        REFERENCES T_SGV_CLIENTE ( cd_cliente )
+        ON DELETE CASCADE;
+
+ALTER TABLE T_SGV_SAC -- O chamado deve ter um funcionario para atende-lô
+    ADD CONSTRAINT FK_T_SGV_FUNCIONARIO FOREIGN KEY ( cd_funcionario )
+        REFERENCES T_SGV_FUNCIONARIO ( cd_funcionario )
+        ON DELETE CASCADE;
+
+ALTER TABLE T_SGV_SAC -- O chamado deve ter relação com um produto para dúvida/sugestão/reclamação
+    ADD CONSTRAINT FK_T_SGV_PRODUTO2 FOREIGN KEY ( cd_produto )
+        REFERENCES T_SGV_PRODUTO ( cd_produto )
+        ON DELETE CASCADE;
+
+ALTER TABLE T_SGV_VIDEO_PRODUTO -- O video do produto precisa de um produto rs
+    ADD CONSTRAINT FK_T_SGV_PRODUTO3 FOREIGN KEY ( cd_produto )
+        REFERENCES T_SGV_PRODUTO ( cd_produto )
+        ON DELETE CASCADE;
+        
+-- Códigos DROP
+
+DROP TABLE T_SGV_CATEGORIA_PRODUTO CASCADE CONSTRAINT;
+
+DROP TABLE T_SGV_CLIENTE CASCADE CONSTRAINT;
+
+DROP TABLE T_SGV_FUNCIONARIO CASCADE CONSTRAINT;
+
+DROP TABLE T_SGV_PEDIDO CASCADE CONSTRAINT;
+
+DROP TABLE T_SGV_PESSOAFISICA CASCADE CONSTRAINT;
+
+DROP TABLE T_SGV_PESSOAJURIDICA CASCADE CONSTRAINT;
+
+DROP TABLE T_SGV_PRODUTO CASCADE CONSTRAINT;
+
+DROP TABLE T_SGV_SAC CASCADE CONSTRAINT;
+
+DROP TABLE T_SGV_VIDEO_PRODUTO CASCADE CONSTRAINT;
+
+DROP TABLE T_SGV_CATEGORIA_VIDEO CASCADE CONSTRAINT;
+
+
+
+-- Relatório do Resumo do Oracle SQL Developer Data Modeler: 
+-- 
+-- CREATE TABLE                             9
+-- CREATE INDEX                             0
+-- ALTER TABLE                             18
+-- CREATE VIEW                              0
+-- ALTER VIEW                               0
+-- CREATE PACKAGE                           0
+-- CREATE PACKAGE BODY                      0
+-- CREATE PROCEDURE                         0
+-- CREATE FUNCTION                          0
+-- CREATE TRIGGER                           0
+-- ALTER TRIGGER                            0
+-- CREATE COLLECTION TYPE                   0
+-- CREATE STRUCTURED TYPE                   0
+-- CREATE STRUCTURED TYPE BODY              0
+-- CREATE CLUSTER                           0
+-- CREATE CONTEXT                           0
+-- CREATE DATABASE                          0
+-- CREATE DIMENSION                         0
+-- CREATE DIRECTORY                         0
+-- CREATE DISK GROUP                        0
+-- CREATE ROLE                              0
+-- CREATE ROLLBACK SEGMENT                  0
+-- CREATE SEQUENCE                          0
+-- CREATE MATERIALIZED VIEW                 0
+-- CREATE MATERIALIZED VIEW LOG             0
+-- CREATE SYNONYM                           0
+-- CREATE TABLESPACE                        0
+-- CREATE USER                              0
+-- 
+-- DROP TABLESPACE                          0
+-- DROP DATABASE                            0
+-- 
+-- REDACTION POLICY                         0
+-- TSDP POLICY                              0
+-- 
+-- ORDS DROP SCHEMA                         0
+-- ORDS ENABLE SCHEMA                       0
+-- ORDS ENABLE OBJECT                       0
+-- 
+-- ERRORS                                   3
+-- WARNINGS                                 0
